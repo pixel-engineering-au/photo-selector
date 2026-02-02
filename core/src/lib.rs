@@ -1,3 +1,5 @@
+pub mod image_index;
+
 pub fn hello() -> &'static str {
     "Hello from photo-selector core"
 }
