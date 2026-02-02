@@ -19,7 +19,13 @@ fn main() {
             println!("(no images)");
         } else {
             for (i, img) in images.iter().enumerate() {
-                println!("{}: {}", i + 1, img.filename);
+                let name = img
+                    .path
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy();
+
+                println!("{}: {}", i + 1, name);
             }
         }
 

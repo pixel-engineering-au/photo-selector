@@ -2,6 +2,7 @@ pub mod image_index;
 pub mod navigation;
 pub mod app_state;
 pub mod file_ops;
+pub mod image_cache;
 
 pub fn hello() -> &'static str {
     "Hello from photo-selector core"

@@ -1,7 +1,8 @@
 use std::path::Path;
 
-use crate::image_index::{ImageEntry, ImageIndex};
+use crate::image_index::{ImageIndex};
 use crate::navigation::NavigationEngine;
+use crate::image_cache::{ImageCache, Image};
 
 pub enum Action {
     Select,
@@ -12,6 +13,7 @@ pub enum Action {
 pub struct AppState {
     index: ImageIndex,
     nav: NavigationEngine,
+    cache: ImageCache,
 }
 
 impl AppState {
@@ -19,6 +21,7 @@ impl AppState {
         Self {
             index: ImageIndex::new(),
             nav: NavigationEngine::new(view_count),
+            cache: ImageCache::new(),
         }
     }
 
@@ -27,11 +30,16 @@ impl AppState {
         self.nav.current_index = 0;
     }
 
-    pub fn current_images(&self) -> Vec<ImageEntry> {
+    pub fn current_images(&mut self) -> Vec<Image> {
         let total = self.index.images.len();
         let (start, end) = self.nav.range(total);
-        self.index.images[start..end].to_vec()
+
+        self.index.images[start..end]
+            .iter()
+            .map(|entry| self.cache.get(&entry.path).clone())
+            .collect()
     }
+
 
     pub fn next(&mut self) {
         let total = self.index.images.len();
@@ -100,7 +108,7 @@ mod tests {
     use super::*;
     use std::fs;
     use tempfile::tempdir;
-    
+
     #[test]
     fn act_on_specific_index() {
         let dir = tempdir().unwrap();
@@ -129,8 +137,14 @@ mod tests {
         app.load_dir(dir.path());
 
         assert_eq!(app.total_images(), 2);
-        assert_eq!(app.current_images().len(), 1);
-        assert_eq!(app.current_images()[0].filename, "a.jpg");
+        let images = app.current_images();
+        assert_eq!(images.len(), 1);
+        let name = images[0]
+            .path
+            .file_name()
+            .unwrap()
+            .to_string_lossy();
+        assert_eq!(name, "a.jpg");
     }
 
     #[test]
@@ -143,13 +157,35 @@ mod tests {
         let mut app = AppState::new(2);
         app.load_dir(dir.path());
 
+        // first page
         let first = app.current_images();
         assert_eq!(first.len(), 2);
+        
+        let first_names: Vec<String> = first
+            .iter()
+            .map(|img| {
+                img.path
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string()
+            })
+            .collect();
+        
+        assert!(first_names.contains(&"a.jpg".to_string()));
+        assert!(first_names.contains(&"b.jpg".to_string()));
 
+        // next page
         app.next();
         let second = app.current_images();
         assert_eq!(second.len(), 1);
-        assert_eq!(second[0].filename, "c.jpg");
+
+        let name = second[0]
+            .path
+            .file_name()
+            .unwrap()
+            .to_string_lossy();
+        assert_eq!(name, "c.jpg");
     }
 
     #[test]
@@ -164,9 +200,14 @@ mod tests {
 
         app.next();
         app.prev();
-
         let images = app.current_images();
-        assert_eq!(images[0].filename, "a.jpg");
+        let name = images[0]
+            .path
+            .file_name()
+            .unwrap()
+            .to_string_lossy();
+
+        assert_eq!(name, "a.jpg");
     }
 
     #[test]
