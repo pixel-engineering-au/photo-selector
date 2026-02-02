@@ -1,4 +1,6 @@
 pub mod image_index;
+pub mod navigation;
+pub mod app_state;
 
 pub fn hello() -> &'static str {
     "Hello from photo-selector core"
