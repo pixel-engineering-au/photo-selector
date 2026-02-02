@@ -1,4 +1,4 @@
-use photo_selector_core::app_state::AppState;
+use photo_selector_core::app_state::{AppState, Action};
 use std::env;
 use std::io::{self, Write};
 use std::path::PathBuf;
@@ -23,18 +23,36 @@ fn main() {
             }
         }
 
-        println!("\n[n] next | [p] prev | [q] quit");
+        println!("\n[n] next | [p] prev | [s <n>] select | [r <n>] reject | [q] quit");
         print!("> ");
         io::stdout().flush().unwrap();
 
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
 
-        match input.trim() {
-            "n" => app.next(),
-            "p" => app.prev(),
-            "q" => break,
+        let parts: Vec<&str> = input.trim().split_whitespace().collect();
+
+        match parts.as_slice() {
+            ["n"] => app.next(),
+            ["p"] => app.prev(),
+            ["s", idx] => {
+                if let Ok(i) = idx.parse::<usize>() {
+                    app.act_on_current_at(Action::Select, i.saturating_sub(1)).unwrap();
+                } else {
+                    println!("Invalid index");
+                }
+            }
+            ["r", idx] => {
+                if let Ok(i) = idx.parse::<usize>() {
+                    app.act_on_current_at(Action::Reject, i.saturating_sub(1)).unwrap();
+                } else {
+                    println!("Invalid index");
+                }
+            }
+            ["q"] => break,
             _ => println!("Unknown command"),
         }
+
+
     }
 }

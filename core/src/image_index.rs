@@ -46,6 +46,11 @@ impl ImageIndex {
             Some("jpg") | Some("jpeg") | Some("png")
         )
     }
+
+    pub fn remove_by_path(&mut self, path: &Path) {
+        self.images.retain(|img| img.path != path);
+    }
+
 }
 
 
@@ -56,6 +61,24 @@ mod tests {
     use super::*;
     use std::fs;
     use tempfile::tempdir;
+
+    #[test]
+    fn remove_by_path_removes_image() {
+        let mut index = ImageIndex::new();
+
+        let path = PathBuf::from("a.jpg");
+
+        index.images.push(ImageEntry {
+            path: path.clone(),
+            filename: "a.jpg".to_string(),
+        });
+
+        assert_eq!(index.images.len(), 1);
+
+        index.remove_by_path(&path);
+
+        assert!(index.images.is_empty());
+    }
 
     #[test]
     fn scans_only_supported_images() {
