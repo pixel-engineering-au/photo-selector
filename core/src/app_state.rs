@@ -89,9 +89,18 @@ impl AppState {
         self.index.remove_by_path(&image.path);
 
         let total = self.index.images.len();
-        if self.nav.current_index >= total && total > 0 {
-            self.nav.current_index = total - 1;
+        let page = self.nav.view_count;
+
+        if total == 0 {
+            self.nav.current_index = 0;
+        } else {
+            let max_page_start = ((total - 1) / page) * page;
+
+            if self.nav.current_index > max_page_start {
+                self.nav.current_index = max_page_start;
+            }
         }
+
 
         Ok(())
     }
