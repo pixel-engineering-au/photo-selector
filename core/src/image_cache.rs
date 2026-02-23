@@ -39,6 +39,10 @@ impl ImageCache {
     pub fn len(&self) -> usize {
         self.cache.len()
     }
+
+    pub fn remove(&mut self, path: &Path) {
+        self.cache.remove(path);
+    }
 }
 
 

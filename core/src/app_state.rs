@@ -31,13 +31,37 @@ impl AppState {
     }
 
     pub fn current_images(&mut self) -> Vec<Image> {
+        let mut result = Vec::new();
+
         let total = self.index.images.len();
         let (start, end) = self.nav.range(total);
 
-        self.index.images[start..end]
-            .iter()
-            .map(|entry| self.cache.get(&entry.path).clone())
-            .collect()
+        let slice: Vec<_> = self.index.images[start..end].to_vec();
+
+        for entry in slice {
+            if entry.path.exists() {
+                result.push(self.cache.get(&entry.path).clone());
+            } else {
+                // Stale entry cleanup
+                self.index.remove_by_path(&entry.path);
+                self.cache.remove(&entry.path);
+            }
+        }
+
+        // After possible removals, fix navigation invariant
+        let total = self.index.images.len();
+        let page = self.nav.view_count;
+
+        if total == 0 {
+            self.nav.current_index = 0;
+        } else {
+            let max_page_start = ((total - 1) / page) * page;
+            if self.nav.current_index > max_page_start {
+                self.nav.current_index = max_page_start;
+            }
+        }
+
+        result
     }
 
 
@@ -259,6 +283,27 @@ mod tests {
         app.load_dir(dir.path());
 
         app.act_on_current(Action::Select).unwrap();
+        assert_eq!(app.total_images(), 0);
+    }
+
+    #[test]
+    fn stale_file_is_removed_automatically() {
+        use std::fs;
+
+        let dir = tempdir().unwrap();
+
+        let img = dir.path().join("a.jpg");
+        fs::write(&img, "data").unwrap();
+
+        let mut app = AppState::new(1);
+        app.load_dir(dir.path());
+
+        // Delete file externally
+        fs::remove_file(&img).unwrap();
+
+        let images = app.current_images();
+
+        assert!(images.is_empty());
         assert_eq!(app.total_images(), 0);
     }
 }
