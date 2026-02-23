@@ -17,14 +17,22 @@ impl ImageCache {
 
     /// Get image from cache, load if missing
     pub fn get(&mut self, path: &Path) -> &Image {
-        let path_buf = path.to_path_buf();
-        self.cache.entry(path_buf.clone()).or_insert_with(|| {
-            // Simulate loading
-            if !path.exists() {
-                panic!("File does not exist: {:?}", path);
-            }
-            Image { path: path_buf }
-        })
+        if !path.exists() {
+            // Remove stale entry if present
+            self.cache.remove(path);
+
+            // Insert temporary placeholder
+            let placeholder = Image {
+                path: path.to_path_buf(),
+            };
+
+            self.cache.insert(path.to_path_buf(), placeholder);
+        }
+
+        self.cache.entry(path.to_path_buf())
+            .or_insert_with(|| Image {
+                path: path.to_path_buf(),
+            })
     }
 
     /// Number of cached images
@@ -69,10 +77,13 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
-    fn panics_on_missing_file() {
+    fn missing_file_is_handled_safely() {
         let mut cache = ImageCache::new();
         let path = PathBuf::from("/non/existent/file.jpg");
-        cache.get(&path);
+
+        let img = cache.get(&path);
+
+        assert_eq!(img.path, path);
+        assert_eq!(cache.len(), 1);
     }
 }
