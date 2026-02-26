@@ -107,6 +107,18 @@ fn main() {
 fn print_events(events: &[AppEvent]) {
     for event in events {
         match event {
+            AppEvent::ScanStarted { path } => {
+                println!("Scanning: {}", path.display());
+            }
+            AppEvent::ScanProgress { scanned } => {
+                // Overwrite the same line so large dirs don't flood the terminal
+                print!("\r  {} images found...", scanned);
+                let _ = io::stdout().flush();
+            }
+            AppEvent::ScanComplete { total } => {
+                // Clear the progress line then print the final count
+                println!("\r  Scan complete: {} images found.", total);
+            }
             AppEvent::DirectoryLoaded { path, total } => {
                 println!("Loaded: {} ({} images)", path.display(), total);
             }

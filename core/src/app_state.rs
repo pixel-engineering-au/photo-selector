@@ -35,16 +35,26 @@ impl AppState {
     // ── Directory loading ──────────────────────────────────────────────────────
 
     pub fn load_dir(&mut self, dir: &std::path::Path) -> Vec<AppEvent> {
-        self.index.scan_dir(dir);
         self.nav.current_index = 0;
         self.undo_stack.clear(); // never undo across sessions
         self.base_dir = Some(dir.to_path_buf());
 
+        // Collect scan events as the index builds
+        let mut events: Vec<AppEvent> = vec![AppEvent::ScanStarted {
+            path: dir.to_path_buf(),
+        }];
+
+        self.index.scan_dir_with_progress(dir, &mut |scanned| {
+            events.push(AppEvent::ScanProgress { scanned });
+        });
+
         let total = self.index.images.len();
-        let mut events = vec![AppEvent::DirectoryLoaded {
+        events.push(AppEvent::ScanComplete { total });
+
+        events.push(AppEvent::DirectoryLoaded {
             path: dir.to_path_buf(),
             total,
-        }];
+        });
 
         if total == 0 {
             events.push(AppEvent::LibraryEmpty);
@@ -368,7 +378,68 @@ mod tests {
     // ── existing behaviour ─────────────────────────────────────────────────────
 
     #[test]
-    fn load_dir_emits_loaded_page_stats() {
+    fn load_dir_emits_scan_started_progress_complete() {
+        let dir = tempdir().unwrap();
+        fs::write(dir.path().join("a.jpg"), "").unwrap();
+        fs::write(dir.path().join("b.jpg"), "").unwrap();
+        fs::write(dir.path().join("c.jpg"), "").unwrap();
+
+        let mut app = AppState::new(4);
+        let events = app.load_dir(dir.path());
+
+        // ScanStarted is first
+        assert!(matches!(&events[0], AppEvent::ScanStarted { .. }));
+
+        // Three ScanProgress events — one per image
+        let progress: Vec<usize> = events.iter().filter_map(|e| {
+            if let AppEvent::ScanProgress { scanned } = e { Some(*scanned) } else { None }
+        }).collect();
+        assert_eq!(progress.len(), 3);
+        assert_eq!(progress, vec![1, 2, 3]);
+
+        // ScanComplete carries the final total
+        let complete = events.iter().find_map(|e| {
+            if let AppEvent::ScanComplete { total } = e { Some(total) } else { None }
+        });
+        assert_eq!(complete, Some(&3));
+
+        // Followed by DirectoryLoaded then PageChanged
+        assert!(events.iter().any(|e| matches!(e, AppEvent::DirectoryLoaded { total: 3, .. })));
+        assert!(has_page_changed(&events));
+    }
+
+    #[test]
+    fn load_empty_dir_emits_scan_events_with_zero() {
+        let dir = tempdir().unwrap();
+        let mut app = AppState::new(1);
+        let events = app.load_dir(dir.path());
+
+        assert!(matches!(&events[0], AppEvent::ScanStarted { .. }));
+
+        // No ScanProgress events for empty dir
+        assert!(!events.iter().any(|e| matches!(e, AppEvent::ScanProgress { .. })));
+
+        assert!(events.iter().any(|e| matches!(e, AppEvent::ScanComplete { total: 0 })));
+        assert!(has_library_empty(&events));
+    }
+
+    #[test]
+    fn scan_started_path_matches_loaded_dir() {
+        let dir = tempdir().unwrap();
+        fs::write(dir.path().join("a.jpg"), "").unwrap();
+
+        let mut app = AppState::new(1);
+        let events = app.load_dir(dir.path());
+
+        let started_path = events.iter().find_map(|e| {
+            if let AppEvent::ScanStarted { path } = e { Some(path) } else { None }
+        }).unwrap();
+
+        assert_eq!(started_path, dir.path());
+    }
+
+    #[test]
+    fn load_dir_emits_directory_loaded_page_and_stats() {
         let dir = tempdir().unwrap();
         fs::write(dir.path().join("a.jpg"), "").unwrap();
 

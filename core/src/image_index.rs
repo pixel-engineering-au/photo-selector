@@ -46,6 +46,23 @@ impl ImageIndex {
     }
 
     pub fn scan_dir(&mut self, dir: &Path) {
+        self.scan_dir_with_progress(dir, &mut |_| {});
+    }
+
+    /// Scan `dir` for supported images, calling `on_progress(scanned_so_far)`
+    /// after each image is discovered.
+    ///
+    /// The callback receives the running count (1, 2, 3 ...) so callers can
+    /// emit `ScanProgress` events or update a UI counter without this module
+    /// knowing anything about events or channels.
+    ///
+    /// Tauri migration path: replace the closure with a channel sender —
+    /// the signature and internal logic stay identical.
+    pub fn scan_dir_with_progress(
+        &mut self,
+        dir: &Path,
+        on_progress: &mut impl FnMut(usize),
+    ) {
         self.images.clear();
 
         if let Ok(entries) = std::fs::read_dir(dir) {
@@ -70,6 +87,8 @@ impl ImageIndex {
                         file_size,
                         date_modified,
                     });
+
+                    on_progress(self.images.len());
                 }
             }
         }
@@ -238,6 +257,50 @@ mod tests {
         index.scan_dir(dir.path());
 
         assert_eq!(index.images[0].file_size, 5);
+    }
+
+    #[test]
+    fn scan_dir_with_progress_fires_callback_per_image() {
+        let dir = tempdir().unwrap();
+        fs::write(dir.path().join("a.jpg"), "").unwrap();
+        fs::write(dir.path().join("b.jpg"), "").unwrap();
+        fs::write(dir.path().join("c.jpg"), "").unwrap();
+        fs::write(dir.path().join("skip.txt"), "").unwrap(); // not counted
+
+        let mut index = ImageIndex::new();
+        let mut counts: Vec<usize> = Vec::new();
+
+        index.scan_dir_with_progress(dir.path(), &mut |n| counts.push(n));
+
+        // One callback per supported image, in discovery order
+        assert_eq!(counts.len(), 3);
+        // Counts must be strictly increasing starting from 1
+        assert_eq!(counts[0], 1);
+        assert_eq!(counts[1], 2);
+        assert_eq!(counts[2], 3);
+    }
+
+    #[test]
+    fn scan_dir_plain_still_works() {
+        let dir = tempdir().unwrap();
+        fs::write(dir.path().join("a.jpg"), "").unwrap();
+
+        let mut index = ImageIndex::new();
+        index.scan_dir(dir.path()); // must not panic
+
+        assert_eq!(index.images.len(), 1);
+    }
+
+    #[test]
+    fn scan_dir_with_progress_empty_dir_fires_no_callbacks() {
+        let dir = tempdir().unwrap();
+        let mut index = ImageIndex::new();
+        let mut count = 0usize;
+
+        index.scan_dir_with_progress(dir.path(), &mut |_| count += 1);
+
+        assert_eq!(count, 0);
+        assert!(index.images.is_empty());
     }
 
     #[test]

@@ -27,6 +27,32 @@ pub struct PageState {
 /// Consumers (CLI, Tauri) match on these — no polling required.
 #[derive(Debug, Clone)]
 pub enum AppEvent {
+    /// Emitted once at the start of a directory scan.
+    /// Consumers can use this to show a progress bar or spinner.
+    ///
+    /// Tauri note: emit this immediately on the event bus before the blocking
+    /// scan runs so the frontend can show a loading state right away.
+    ScanStarted {
+        path: PathBuf,
+    },
+
+    /// Emitted once per discovered image during scanning.
+    /// `scanned` is the running count of supported images found so far.
+    /// There is no `total` because directory size is not known up front.
+    ///
+    /// Tauri: forward to the frontend to animate a live counter
+    /// ("Scanning... 142 images found"). Throttle in the Tauri layer
+    /// if needed (e.g. only forward every 10th event for large dirs).
+    ScanProgress {
+        scanned: usize,
+    },
+
+    /// Emitted once when scanning is complete and the index is fully built.
+    /// Always followed by DirectoryLoaded, then PageChanged or LibraryEmpty.
+    ScanComplete {
+        total: usize,
+    },
+
     /// A directory was scanned and the library is ready.
     /// Always followed by PageChanged (or LibraryEmpty) and StatsChanged.
     DirectoryLoaded {
