@@ -22,6 +22,8 @@ impl NavigationEngine {
         if next < total_items {
             self.current_index = next;
         }
+        // else: already on last page — silent no-op by design.
+        // Callers (e.g. CLI) should check if they need to give user feedback.
     }
 
     pub fn prev(&mut self) {

@@ -46,7 +46,12 @@ impl ImageIndex {
             Some("jpg") | Some("jpeg") | Some("png")
         )
     }
-
+    
+    // O(n) — acceptable for user-triggered single removals; revisit if batch ops are added
+    // O(n) linear scan — acceptable for user-triggered single removals.
+    // If batch operations are ever added, switch to a HashMap<PathBuf, usize>
+    // lookup table + swap_remove for O(1) removal while maintaining sort order
+    // via a secondary sorted structure.
     pub fn remove_by_path(&mut self, path: &Path) {
         self.images.retain(|img| img.path != path);
     }

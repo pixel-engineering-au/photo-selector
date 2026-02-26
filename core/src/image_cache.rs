@@ -17,23 +17,11 @@ impl ImageCache {
 
     /// Get image from cache, load if missing
     pub fn get(&mut self, path: &Path) -> &Image {
-        if !path.exists() {
-            // Remove stale entry if present
-            self.cache.remove(path);
-
-            // Insert temporary placeholder
-            let placeholder = Image {
-                path: path.to_path_buf(),
-            };
-
-            self.cache.insert(path.to_path_buf(), placeholder);
-        }
-
-        self.cache.entry(path.to_path_buf())
-            .or_insert_with(|| Image {
-                path: path.to_path_buf(),
-            })
+        self.cache
+            .entry(path.to_path_buf())
+            .or_insert_with(|| Image { path: path.to_path_buf() })
     }
+
 
     /// Number of cached images
     pub fn len(&self) -> usize {

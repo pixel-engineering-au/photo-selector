@@ -29,6 +29,30 @@ impl AppState {
         self.index.scan_dir(dir);
         self.nav.current_index = 0;
     }
+    
+    /// Returns the ImageEntry at `view_index` within the current page window.
+    /// Pure — no side effects, no stale cleanup, no nav mutation.
+    fn image_at(&self, view_index: usize) -> Option<&crate::image_index::ImageEntry> {
+        let total = self.index.images.len();
+        let (start, end) = self.nav.range(total);
+        let page_entries = &self.index.images[start..end];
+        page_entries.get(view_index)
+    }
+
+    /// Clamps `nav.current_index` so it always points to a valid page start.
+    /// Must be called after any operation that changes `index.images.len()`.
+    fn clamp_nav(&mut self) {
+        let total = self.index.images.len();
+        let page = self.nav.view_count;
+        if total == 0 {
+            self.nav.current_index = 0;
+        } else {
+            let max_page_start = ((total - 1) / page) * page;
+            if self.nav.current_index > max_page_start {
+                self.nav.current_index = max_page_start;
+            }
+        }
+    }
 
     pub fn current_images(&mut self) -> Vec<Image> {
         let mut result = Vec::new();
@@ -49,17 +73,7 @@ impl AppState {
         }
 
         // After possible removals, fix navigation invariant
-        let total = self.index.images.len();
-        let page = self.nav.view_count;
-
-        if total == 0 {
-            self.nav.current_index = 0;
-        } else {
-            let max_page_start = ((total - 1) / page) * page;
-            if self.nav.current_index > max_page_start {
-                self.nav.current_index = max_page_start;
-            }
-        }
+        self.clamp_nav();
 
         result
     }
@@ -82,53 +96,36 @@ impl AppState {
         self.act_on_current_at(action, 0)
     }
 
+
     pub fn act_on_current_at(
         &mut self,
         action: Action,
         view_index: usize,
     ) -> std::io::Result<()> {
-        let images = self.current_images();
-
-        let image = match images.get(view_index) {
-            Some(img) => img.clone(),
+        // Use pure image_at() — no stale cleanup or nav side-effects
+        let path = match self.image_at(view_index) {
+            Some(entry) => entry.path.clone(),
             None => return Ok(()), // invalid index → no-op
         };
 
-        let base_dir = image
-            .path
+        let base_dir = path
             .parent()
-            .expect("image has parent directory");
+            .expect("image has parent directory")
+            .to_path_buf();
 
         let subdir = match action {
             Action::Select => "selected",
             Action::Reject => "rejected",
         };
 
-        crate::file_ops::move_to_subdir(
-            &image.path,
-            base_dir,
-            subdir,
-        )?;
+        crate::file_ops::move_to_subdir(&path, &base_dir, subdir)?;
 
-        self.index.remove_by_path(&image.path);
-
-        let total = self.index.images.len();
-        let page = self.nav.view_count;
-
-        if total == 0 {
-            self.nav.current_index = 0;
-        } else {
-            let max_page_start = ((total - 1) / page) * page;
-
-            if self.nav.current_index > max_page_start {
-                self.nav.current_index = max_page_start;
-            }
-        }
-
+        self.index.remove_by_path(&path);
+        self.cache.remove(&path);
+        self.clamp_nav();
 
         Ok(())
     }
-
 
 }
 
