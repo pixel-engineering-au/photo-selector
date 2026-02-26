@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "core",
-    "cli"
+    "cli",
+    "src-tauri",
 ]
 resolver = "2"

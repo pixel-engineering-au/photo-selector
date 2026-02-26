@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
+//use std::time::SystemTime;
 
 /// Load state of an image entry.
 /// Starts as Pending — the GUI shows a skeleton.
@@ -9,6 +9,7 @@ use std::time::SystemTime;
 ///
 /// Tauri note: add `#[derive(serde::Serialize)]` when wiring up Tauri.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "tauri", derive(serde::Serialize, serde::Deserialize))]
 pub enum ImageLoadState {
     /// Not yet loaded — show a loading skeleton in the GUI.
     Pending,
@@ -26,6 +27,7 @@ pub enum ImageLoadState {
 ///
 /// Tauri note: add `#[derive(serde::Serialize)]` when wiring up Tauri.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "tauri", derive(serde::Serialize, serde::Deserialize))]
 pub struct Image {
     pub path: PathBuf,
 
@@ -36,7 +38,7 @@ pub struct Image {
     pub file_size: Option<u64>,
 
     /// Date taken from EXIF, or file modified time as fallback — None until loaded.
-    pub date_taken: Option<SystemTime>,
+    pub date_taken: Option<u64>,  // Unix timestamp seconds, None until loaded
 
     /// Current load/thumbnail state.
     pub load_state: ImageLoadState,

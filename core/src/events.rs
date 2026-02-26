@@ -8,6 +8,7 @@ use crate::stats::LibraryStats;
 /// Tauri note: add `#[derive(serde::Serialize, serde::Deserialize)]`
 /// here and on all referenced types when wiring up Tauri.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "tauri", derive(serde::Serialize, serde::Deserialize))]
 pub struct PageState {
     /// Images currently visible in the page window.
     pub images: Vec<Image>,
@@ -26,6 +27,7 @@ pub struct PageState {
 /// Every state change the core can emit.
 /// Consumers (CLI, Tauri) match on these — no polling required.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "tauri", derive(serde::Serialize, serde::Deserialize))]
 pub enum AppEvent {
     /// Emitted once at the start of a directory scan.
     /// Consumers can use this to show a progress bar or spinner.
@@ -112,6 +114,7 @@ pub enum AppEvent {
 
 /// Whether a file was selected or rejected.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "tauri", derive(serde::Serialize, serde::Deserialize))]
 pub enum MoveAction {
     Select,
     Reject,
@@ -119,6 +122,7 @@ pub enum MoveAction {
 
 /// Which boundary was hit during navigation.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "tauri", derive(serde::Serialize, serde::Deserialize))]
 pub enum BoundaryKind {
     /// Already on first page, prev() was a no-op.
     FirstPage,

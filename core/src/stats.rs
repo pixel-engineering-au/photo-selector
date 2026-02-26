@@ -5,6 +5,7 @@ use std::path::Path;
 ///
 /// Tauri note: add `#[derive(serde::Serialize)]` when wiring up Tauri.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "tauri", derive(serde::Serialize, serde::Deserialize))]
 pub struct LibraryStats {
     /// Images still in the main directory (not yet actioned).
     pub remaining: usize,
