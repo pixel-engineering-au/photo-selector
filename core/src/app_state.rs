@@ -292,11 +292,16 @@ impl AppState {
         let images = self.index.images[start..end]
             .iter()
             .map(|e| {
-                // Use cached entry if present, else build a minimal pending Image
+                // Use cached entry if present — it may have richer metadata.
+                // Otherwise build a pending Image but carry file_size across
+                // from the index entry, which already has it from scan time.
                 self.cache
                     .get_cached(&e.path)
                     .cloned()
-                    .unwrap_or_else(|| Image::pending(e.path.clone()))
+                    .unwrap_or_else(|| Image {
+                        file_size: Some(e.file_size),
+                        ..Image::pending(e.path.clone())
+                    })
             })
             .collect();
 
@@ -787,5 +792,25 @@ mod tests {
         assert_eq!(page.view_count, 2);
         assert_eq!(page.total, 2);
         assert_eq!(page.total_pages, 1);
+    }
+
+    #[test]
+    fn page_state_images_have_file_size_populated() {
+        let dir = tempdir().unwrap();
+        fs::write(dir.path().join("a.jpg"), "hello").unwrap(); // 5 bytes
+
+        let mut app = AppState::new(1);
+        let events = app.load_dir(dir.path());
+
+        let page = events.iter().find_map(|e| {
+            if let AppEvent::PageChanged(p) = e { Some(p) } else { None }
+        }).unwrap();
+
+        assert_eq!(page.images.len(), 1);
+        assert_eq!(
+            page.images[0].file_size,
+            Some(5),
+            "file_size must be populated from ImageEntry, not left as None"
+        );
     }
 }

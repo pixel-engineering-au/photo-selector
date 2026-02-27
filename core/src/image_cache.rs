@@ -1,15 +1,13 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-//use std::time::SystemTime;
 
 /// Load state of an image entry.
 /// Starts as Pending — the GUI shows a skeleton.
 /// Transitions to Ready once a thumbnail is generated,
 /// or Failed if the file can't be read.
-///
-/// Tauri note: add `#[derive(serde::Serialize)]` when wiring up Tauri.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "tauri", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "tauri", serde(tag = "type"))]
 pub enum ImageLoadState {
     /// Not yet loaded — show a loading skeleton in the GUI.
     Pending,
@@ -24,8 +22,6 @@ pub enum ImageLoadState {
 /// All optional fields are `None` until populated by a background worker.
 /// The struct shape is intentionally forward-looking so Tauri serialisation
 /// never needs a breaking change when metadata loading is implemented.
-///
-/// Tauri note: add `#[derive(serde::Serialize)]` when wiring up Tauri.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "tauri", derive(serde::Serialize, serde::Deserialize))]
 pub struct Image {
@@ -37,8 +33,9 @@ pub struct Image {
     /// File size in bytes — populated at scan time.
     pub file_size: Option<u64>,
 
-    /// Date taken from EXIF, or file modified time as fallback — None until loaded.
-    pub date_taken: Option<u64>,  // Unix timestamp seconds, None until loaded
+    /// Unix timestamp seconds — None until loaded.
+    /// Stored as u64 rather than SystemTime for serde compatibility.
+    pub date_taken: Option<u64>,
 
     /// Current load/thumbnail state.
     pub load_state: ImageLoadState,

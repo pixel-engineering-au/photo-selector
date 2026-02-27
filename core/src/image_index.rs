@@ -7,6 +7,7 @@ use std::time::SystemTime;
 /// when wiring up Tauri so the frontend can send sort commands.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "tauri", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "tauri", serde(tag = "type"))]
 pub enum SortOrder {
     /// A → Z by filename (default).
     #[default]
