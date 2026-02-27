@@ -11,13 +11,12 @@ const SORT_OPTIONS = [
   { value: 'SizeAsc',          label: 'Smallest first' },
 ];
 
-const VIEW_OPTIONS = [1, 2, 4];
+const VIEW_OPTIONS = [1, 2, 4, 6, 8];
 
 export function Sidebar() {
   const stats   = useAppStore(s => s.stats);
   const canUndo = useAppStore(s => s.canUndo);
   const page    = useAppStore(s => s.page);
-
 
   async function handleOpenFolder() {
     const selected = await open({ directory: true, multiple: false });
@@ -30,8 +29,9 @@ export function Sidebar() {
     await invoke('undo_action');
   }
 
+  // Wrap order in { type } to match serde(tag = "type") on SortOrder
   async function handleSort(order: string) {
-    await invoke('set_sort_order', { order });
+    await invoke('set_sort_order', { order: { type: order } });
   }
 
   async function handleViewCount(count: number) {
@@ -52,7 +52,6 @@ export function Sidebar() {
       display: 'flex',
       flexDirection: 'column',
       padding: '20px 0',
-      gap: 0,
       overflowY: 'auto',
     }}>
 
@@ -128,18 +127,27 @@ export function Sidebar() {
               onChange={e => handleSort(e.target.value)}
               style={{
                 width: '100%',
-                background: 'var(--bg-overlay)',
-                border: '1px solid var(--border)',
-                color: 'var(--text-primary)',
+                background: 'var(--accent)',
+                border: '1px solid var(--accent-dim)',
+                color: '#000',
                 padding: '7px 10px',
                 borderRadius: 4,
                 fontFamily: 'var(--font-ui)',
                 fontSize: 12,
+                fontWeight: 500,
                 cursor: 'pointer',
+                appearance: 'none',
+                WebkitAppearance: 'none',
               }}
             >
               {SORT_OPTIONS.map(o => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+                <option
+                  key={o.value}
+                  value={o.value}
+                  style={{ background: '#1a1200', color: '#fff' }}
+                >
+                  {o.label}
+                </option>
               ))}
             </select>
           </Section>
@@ -148,13 +156,16 @@ export function Sidebar() {
 
           {/* View count */}
           <Section label="View">
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, 1fr)',
+              gap: 4,
+            }}>
               {VIEW_OPTIONS.map(n => (
                 <button
                   key={n}
                   onClick={() => handleViewCount(n)}
                   style={{
-                    flex: 1,
                     padding: '6px 0',
                     background: page.view_count === n
                       ? 'var(--accent)' : 'var(--bg-overlay)',
@@ -162,10 +173,11 @@ export function Sidebar() {
                       ? '#000' : 'var(--text-secondary)',
                     borderRadius: 4,
                     fontFamily: 'var(--font-mono)',
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 500,
                     transition: 'var(--transition)',
                     border: '1px solid var(--border)',
+                    cursor: 'pointer',
                   }}
                 >
                   {n}
@@ -189,7 +201,7 @@ export function Sidebar() {
   );
 }
 
-// ── Small helpers ────────────────────────────────────────────
+// ── Small helpers ─────────────────────────────────────────────────────────────
 
 function Divider() {
   return (
@@ -277,6 +289,7 @@ function ActionButton({ onClick, children, primary, disabled }: {
         border: '1px solid var(--border)',
         transition: 'var(--transition)',
         textAlign: 'left',
+        cursor: disabled ? 'not-allowed' : 'pointer',
       }}
     >
       {children}

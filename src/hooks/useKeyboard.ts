@@ -7,7 +7,7 @@ export function useKeyboard() {
 
   useEffect(() => {
     async function handleKey(e: KeyboardEvent) {
-      // Don't fire if focus is in an input or select
+      // Don't fire if focus is inside an input or select
       if (e.target instanceof HTMLInputElement
        || e.target instanceof HTMLSelectElement) return;
 
@@ -28,7 +28,7 @@ export function useKeyboard() {
             await invoke('undo_action');
           }
           break;
-        // Single image shortcuts — only work in 1-up view
+        // Single image shortcuts — only in 1-up view
         case 's':
         case 'S':
           if (page?.view_count === 1) {

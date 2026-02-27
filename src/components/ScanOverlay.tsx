@@ -4,8 +4,9 @@ export function ScanOverlay() {
   const scanCount = useAppStore(s => s.scanCount);
   const loadedDir = useAppStore(s => s.loadedDir);
 
+  // Show just the folder name, not the full path
   const dirName = loadedDir
-    ? loadedDir.split('/').pop() ?? loadedDir
+    ? (loadedDir.split('/').pop() ?? loadedDir.split('\\').pop() ?? loadedDir)
     : '';
 
   return (
@@ -20,6 +21,7 @@ export function ScanOverlay() {
       gap: 16,
       zIndex: 100,
     }}>
+
       <div style={{
         fontFamily: 'var(--font-mono)',
         fontSize: 11,
@@ -29,17 +31,20 @@ export function ScanOverlay() {
       }}>
         Scanning
       </div>
+
       <div style={{
         fontFamily: 'var(--font-mono)',
-        fontSize: 48,
+        fontSize: 64,
         fontWeight: 500,
         color: 'var(--accent)',
         lineHeight: 1,
-        minWidth: 120,
+        minWidth: 160,
         textAlign: 'center',
+        animation: 'scan-pulse 1s ease-in-out infinite',
       }}>
         {scanCount}
       </div>
+
       <div style={{
         fontFamily: 'var(--font-mono)',
         fontSize: 11,
@@ -47,6 +52,14 @@ export function ScanOverlay() {
       }}>
         {dirName}
       </div>
+
+      <style>{`
+        @keyframes scan-pulse {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.5; }
+        }
+      `}</style>
+
     </div>
   );
 }

@@ -18,13 +18,31 @@ pub fn open_directory(
     state: State<'_, TauriAppState>,
     handle: AppHandle,
 ) -> Result<(), String> {
-    // Synchronous scan is fine for now — ScanStarted/ScanProgress events
-    // keep the frontend informed. Move to spawn_blocking when dirs exceed
-    // ~10,000 images and the brief UI pause becomes noticeable.
     let events = state.0.lock()
         .map_err(|e| e.to_string())?
         .load_dir(&PathBuf::from(path));
-    emit_all(&handle, events);
+
+    // Grab total from ScanComplete so we know when we're at the last progress event
+    let total = events.iter().find_map(|e| {
+        if let photo_selector_core::events::AppEvent::ScanComplete { total } = e {
+            Some(*total)
+        } else {
+            None
+        }
+    }).unwrap_or(0);
+
+    for event in events {
+        if let photo_selector_core::events::AppEvent::ScanProgress { scanned } = &event {
+            // Always emit first, last, and every 10th — never skip all of them
+            let is_first = *scanned == 1;
+            let is_last  = *scanned == total;
+            let is_tenth = scanned % 10 == 0;
+            if !is_first && !is_last && !is_tenth {
+                continue;
+            }
+        }
+        handle.emit("core-event", &event).ok();
+    }
     Ok(())
 }
 

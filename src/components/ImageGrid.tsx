@@ -1,5 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
-import { convertFileSrc } from '@tauri-apps/api/core';
+import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import { useState } from 'react';
 import type { PageState, ImageInfo } from '../store/events';
 
@@ -8,9 +7,12 @@ interface Props {
 }
 
 export function ImageGrid({ page }: Props) {
+  // Column count based on view_count
   const cols = page.view_count === 1 ? 1
              : page.view_count === 2 ? 2
-             : 3;  // 4 up shows as 2×2
+             : page.view_count <= 4  ? 2   // 4 = 2×2
+             : page.view_count <= 6  ? 3   // 6 = 2×3
+             : 4;                          // 8 = 2×4
 
   return (
     <div style={{
@@ -38,22 +40,23 @@ function ImageTile({ image, viewIndex }: {
   viewIndex: number;
 }) {
   const [hovered, setHovered] = useState(false);
-  const [acting, setActing]   = useState(false);
+  const [acting,  setActing]  = useState(false);
 
-  const src = convertFileSrc(image.path);
-
-  const filename  = image.path.split('/').pop()
-                 ?? image.path.split('\\').pop()
-                 ?? image.path;
-  const sizeKb    = image.file_size != null
+  const src      = convertFileSrc(image.path);
+  const filename = image.path.split('/').pop()
+                ?? image.path.split('\\').pop()
+                ?? image.path;
+  const sizeKb   = image.file_size != null
                  ? `${(image.file_size / 1024).toFixed(0)} KB`
                  : '';
 
   async function handleAction(action: 'select' | 'reject') {
     if (acting) return;
     setActing(true);
-    await invoke(action === 'select' ? 'select_image' : 'reject_image',
-      { viewIndex });
+    await invoke(
+      action === 'select' ? 'select_image' : 'reject_image',
+      { viewIndex }
+    );
     setActing(false);
   }
 
@@ -66,12 +69,14 @@ function ImageTile({ image, viewIndex }: {
         overflow: 'hidden',
         borderRadius: 4,
         background: 'var(--bg-raised)',
-        border: '1px solid var(--border)',
+        // Fix: never mix border shorthand and borderColor — always set border fully
+        border: hovered
+          ? '1px solid var(--accent)'
+          : '1px solid var(--border)',
         display: 'flex',
         flexDirection: 'column',
         cursor: 'default',
         transition: 'border-color var(--transition)',
-        ...(hovered ? { borderColor: 'var(--accent)' } : {}),
       }}
     >
       {/* Image */}
@@ -180,7 +185,6 @@ function ActionBtn({ label, bg, hover, onClick }: {
         border: 'none',
         cursor: 'pointer',
         transition: 'background var(--transition)',
-        backdropFilter: 'blur(4px)',
       }}
     >
       {label}

@@ -45,12 +45,7 @@ function WelcomeState() {
       gap: 12,
       userSelect: 'none',
     }}>
-      <div style={{
-        fontSize: 48,
-        opacity: 0.15,
-      }}>
-        ⬜
-      </div>
+      <div style={{ fontSize: 48, opacity: 0.15 }}>⬜</div>
       <div style={{
         fontFamily: 'var(--font-mono)',
         fontSize: 11,
