@@ -1,68 +1,57 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
+*, *::before, *::after {
+  box-sizing: border-box;
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  padding: 0;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+:root {
+  --bg-base:       #0f0f0f;
+  --bg-surface:    #161616;
+  --bg-raised:     #1e1e1e;
+  --bg-overlay:    #252525;
+
+  --border:        #2a2a2a;
+  --border-subtle: #1e1e1e;
+
+  --text-primary:  #e8e8e8;
+  --text-secondary:#8a8a8a;
+  --text-muted:    #555555;
+
+  --accent:        #e8a020;   /* amber */
+  --accent-dim:    #b87818;
+  --select-green:  #3a7d44;
+  --reject-red:    #8b2020;
+  --select-hover:  #4a9d54;
+  --reject-hover:  #ab3030;
+
+  --font-ui:       'DM Sans',   sans-serif;
+  --font-mono:     'DM Mono',   monospace;
+
+  --sidebar-width: 240px;
+  --transition:    120ms ease;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
 }
 
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
+  font-family: var(--font-ui);
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  border: none;
+  outline: none;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
