@@ -102,7 +102,7 @@ sudo apt-get install -y \
 ### Development
 
 ```bash
-git clone https://github.com/yourname/photo-selector.git
+git clone https://github.com/pixel-engineering-au/photo-selector.git
 cd photo-selector
 npm install
 cargo tauri dev
