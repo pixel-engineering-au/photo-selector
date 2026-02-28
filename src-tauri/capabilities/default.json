@@ -9,6 +9,7 @@
     "core:default",
     "dialog:allow-open",
     "core:event:allow-listen",
-    "core:event:allow-emit"
+    "core:event:allow-emit",
+    "core:window:allow-set-title"
   ]
 }

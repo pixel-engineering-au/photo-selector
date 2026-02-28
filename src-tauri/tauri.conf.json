@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "photo-selector",
-  "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "version": "1.0.1",
+  "identifier": "com.pixelengineering.photo-selector",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -39,7 +39,10 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "category": "Photography",
+    "shortDescription": "Fast photo selection and culling tool",
+    "longDescription": "Select and reject photos quickly. Organises images into selected and rejected folders."
   }
   
 }
