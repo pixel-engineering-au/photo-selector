@@ -1,4 +1,4 @@
-name: Build
+name: Build and Release
 
 on:
   push:
@@ -9,12 +9,13 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - platform: ubuntu-22.04
-            args: '--target x86_64-unknown-linux-gnu'
+            name: linux
           - platform: windows-latest
-            args: '--target x86_64-pc-windows-msvc'
+            name: windows
 
     runs-on: ${{ matrix.platform }}
 
@@ -36,28 +37,55 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Rust
+      - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './target'
+          workspaces: '. -> target'
 
-      - name: Install frontend deps
+      - name: Install frontend dependencies
         run: npm install
 
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          args: ${{ matrix.args }}
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          releaseName: 'Photo Selector ${{ github.ref_name }}'
+          releaseBody: 'See CHANGELOG for details.'
+          releaseDraft: false
+          prerelease: false
 
-      - name: Upload artifacts
+      # Linux artifacts — tauri-action builds to repo root /target
+      # not src-tauri/target — confirmed from action logs
+      - name: Upload Linux deb
+        if: matrix.platform == 'ubuntu-22.04'
         uses: actions/upload-artifact@v4
         with:
-          name: bundle-${{ matrix.platform }}
-          path: |
-            target/x86_64-unknown-linux-gnu/release/bundle/deb/*.deb
-            target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage
-            target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
-            target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+          name: linux-deb
+          path: target/x86_64-unknown-linux-gnu/release/bundle/deb/*.deb
+
+      - name: Upload Linux AppImage
+        if: matrix.platform == 'ubuntu-22.04'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage
+
+      # Windows artifacts
+      - name: Upload Windows installer
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-nsis
+          path: target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+
+      - name: Upload Windows MSI
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msi
+          path: target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
