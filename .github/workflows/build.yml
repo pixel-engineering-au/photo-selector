@@ -42,7 +42,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: './target'
 
       - name: Install frontend deps
         run: npm install
@@ -57,7 +57,7 @@ jobs:
         with:
           name: bundle-${{ matrix.platform }}
           path: |
-            src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/deb/*.deb
-            src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage
-            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
-            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+            target/x86_64-unknown-linux-gnu/release/bundle/deb/*.deb
+            target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage
+            target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+            target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
