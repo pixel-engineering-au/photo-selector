@@ -20,6 +20,8 @@ jobs:
             name: linux
           - platform: windows-latest
             name: windows
+          - platform: macos-latest
+            name: macos
 
     runs-on: ${{ matrix.platform }}
 
@@ -43,6 +45,9 @@ jobs:
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
+        with:
+          # Build universal macOS binary (Intel + Apple Silicon in one file)
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -62,8 +67,10 @@ jobs:
           releaseBody: 'See CHANGELOG for details.'
           releaseDraft: false
           prerelease: false
+          # Build universal binary on macOS
+          args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin' || '' }}
 
-      # Linux artifacts — builds to target/release/bundle (no target triple in path)
+      # Linux artifacts
       - name: Upload Linux deb
         if: matrix.platform == 'ubuntu-22.04'
         uses: actions/upload-artifact@v4
@@ -78,7 +85,7 @@ jobs:
           name: linux-appimage
           path: target/release/bundle/appimage/*.AppImage
 
-      # Windows artifacts — builds to target/release/bundle (no target triple in path)
+      # Windows artifacts
       - name: Upload Windows installer
         if: matrix.platform == 'windows-latest'
         uses: actions/upload-artifact@v4
@@ -92,3 +99,18 @@ jobs:
         with:
           name: windows-msi
           path: target/release/bundle/msi/*.msi
+
+      # macOS artifacts — universal binary runs on both Intel and Apple Silicon
+      - name: Upload macOS dmg
+        if: matrix.platform == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: target/universal-apple-darwin/release/bundle/dmg/*.dmg
+
+      - name: Upload macOS app
+        if: matrix.platform == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-app
+          path: target/universal-apple-darwin/release/bundle/macos/*.app
