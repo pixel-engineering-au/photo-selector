@@ -78,7 +78,7 @@ Download and run the `.exe` installer from the [Releases](../../releases) page.
 
 ### macOS
 
->Download and run the `.dmg` installer from the [Releases](../../releases) page.
+Download and run the `.dmg` installer from the [Releases](../../releases) page.
 
 
 ---
