@@ -78,7 +78,8 @@ Download and run the `.exe` installer from the [Releases](../../releases) page.
 
 ### macOS
 
-> macOS builds are not currently distributed. See [Building from Source](#building-from-source) below.
+>Download and run the `.dmg` installer from the [Releases](../../releases) page.
+
 
 ---
 
